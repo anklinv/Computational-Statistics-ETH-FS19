@@ -1,0 +1,69 @@
+\section*{Model Selection}
+Criteria for model selection (for linear models): $\text{Mallow's }C_p=\frac 1 n (RSS + 2d\cdot \hat\sigma^2)$, $AIC = \frac{1}{n\hat\sigma^2}(RSS+2d\cdot\hat\sigma^2)$, $BIC= \frac{1}{n\hat\sigma^2}(RSS+\log(n)d\cdot\hat\sigma^2) = -2 \cdot\log(\hat L) + d\cdot\log(n)$ where $\hat L$ is the maximized value of the likelihood of the model, $AdjR^2=1-\frac{RSS / (n-d-1)}{TSS / (n-1)}$.
+
+\subsection*{Shrinkage Methods}
+Assume centered variable (no intercept). Also need so standardize data:
+\textbf{Ridge regression:} $\hat\beta_s^{ridge} = \text{argmin}_\beta RSS(\beta) + \lambda ||\beta||_2^2 = (X^\top X + \lambda I)^{-1}X^\top y$
+\textbf{Lasso:} $\hat\beta_s^{lasso}\text{argmin}_\beta RSS(\beta) + \lambda ||\beta||_1$,
+\textbf{Elastic Net:} $\hat\beta_s^{elastic} = \text{argmin}_\beta RSS(\beta)+(1-\alpha)\lambda||\beta||_1 + \alpha \lambda ||\beta||_2^2$($\alpha=1$: ridge, $\alpha=0$: lasso),\\
+\textbf{Adaptive Lasso:} Lasso with penalty weights: \\
+$\hat\beta_s^{adapt.lasso}\text{argmin}_\beta RSS(\beta) + \lambda \sum_{j=1}^p w_j |\beta_j|$. Take a $\sqrt{n}$ consistent estimate $\hat\beta$ of $\beta$ (e.g. least squares Choose $\gamma>0$, then set $\hat w_j = {1}/{|\hat\beta|^\gamma}$. This asymptotically selects the right covariates and has optimal estimation rate.\\
+\textbf{Group Lasso:} Predictors are divided into $L$ groups of size $p_1, ..., p_L$s.t. $\sum p_i = p$. $\hat\beta_\lambda^{gr.lasso}=\text{argmin}_\beta RSS(\beta)+\lambda \sum_{l=1}^L \sqrt{p_l} ||\beta||_2$. (if L=p, we get Lasso). Acts like Lasso on a group level. Useful if there are categorical variables with $>2$ categories (put all corresponding dummy variables in a group).\\
+\subsection*{Best subset:} $\hat\beta_s^{subset} = \text{argmin}_{\beta, ||\beta||_0 \leq s} RSS(\beta)$. 1) Fit $M_0$ (null model) = sample mean. 2) For $k=1,...,p$ fit $\binom p k$models that contain exactly $k$ predictors and select best (smallest RSS): $M_k$. 3) Select best among $M_0, ..., M_p$ using CV or criteria.\\
+\textbf{Forward stepwise:} 1) Fit $M_0$ 2) For $k=0,...,p-1$ fit all $p-k$ models with 1 additional predictor and select best (smallest RSS): $M_k$. 3) Select best among $M_0,....,M_p$ using CV or criteria. \\
+\textbf{Backward stepwise:} 1) Fit $M_p$ (full model). 2) For $k=p,p-1,...,1$: fit all $k$ models that drop one perdictor in $M_k$. Choose best (smallest RSS): $M_{k-1}$. 3) Select best among $M_0,...,M_p$ using CV or criteria.
+
+\begin{codebox}{r}{Model Selection}
+# Lasso/Ridge
+library(glmnet)
+grid <- 10^seq(from=10,to=-2,length=100)
+ridge <- glmnet(x[train,], y[train], alpha=0, lambda=gridm thres=1e-12)
+lasso <- glmnet(x[train,], y[train], alpha=1, lambda=gridm thres=1e-12)
+# Best subset
+regfit.full=regsubsets(Salary~., data=..., nvmax=19)
+# Forward stepwise
+regfit.full=regsubsets(Salary~., data=..., nvmax=19, method="forward")
+# Backward stepwise
+regfit.full=regsubsets(Salary~., data=..., nvmax=19, method="backward")
+# Mallow Cp
+library(leaps)
+m <- leaps::regsubsets(y~., data=train, nvmax=10)
+mo <- which.min(summary(m)$cp)
+form <- as.formula(paste("y~",
+    paste(names(coef(m,mo))[-1],collapse="+"), sep = ""))
+fit <- lm(form, data=test)
+# Workaround for categorical variables
+predict.regsubsets <- function(reg, new.data, id) {
+  form <- as.formula(reg$call[[2]])
+  mat <- model.matrix(form, new.data)
+  coefi <- coef(reg, id=id)
+  return(mat[,names(coefi)]%*%coefi)
+}
+n <- nrow(data)
+folds <- sample(cut(1:n, 10, labels=F), n, replace=F)
+for (fold in 1:10) {
+  test.fold <- which(folds == fold)
+  data.train <- data[-test.fold,]
+  data.test <- data[test.fold,]
+  m <- nrow(data.train)
+  cv.f <- sample(cut(1:m, 10, labels=F), m, replace=F)
+  cv.errors <- matrix(nrow=10, ncol=19)
+  for (k in 1:10) {
+    cv.tf <- (cv.f == k)
+    cv.m <- regsubsets(Salary~., data.train[-cv.tf,], nvmax=19)
+    for (i in 1:19) {
+      pred <- predict(cv.m, data.train[cv.tf,], id=i)
+      cv.errors[k, i] <- mean((pred-data.train[cv.tf,]$Salary)^2)
+    }
+  }
+  m <- regsubsets(Salary~., data=data.train, nvmax=19)
+  best.cp <- which.min(summary(m)$cp)
+  best.cv <- which.min(apply(cv.errors, 2, mean))
+  pred.cp <- predict.regsubsets(m, data.test, best.cp)
+  pred.cv <- predict.regsubsets(m, data.test, best.cv)
+}
+# For double CV with glmnet, can use cv.glmnet
+inner.folds <- factors(folds[folds!=i])
+levels(inner.folds) <- 1:(k-1)
+inner.folds <- as.numeric(inner.folds)
+\end{codebox}

@@ -1,0 +1,36 @@
+\section*{Multiple Testing}
+\begin{tabular}{l|l|l|l}
+ & \textbf{$\mathbf{H_0}$ true} & \textbf{$\mathbf{H_A}$ true} &  \\ \hline
+$\mathbf{H_0}$ \textbf{not reject.} & $U$ true neg. & \begin{tabular}[c]{@{}l@{}}$T$ false neg.\\ Type II error\end{tabular} & $m-R$ \\ \hline
+$\mathbf{H_0}$ \textbf{reject.} & \begin{tabular}[c]{@{}l@{}}$V$ false pos.\\ Type I error\end{tabular} & $S$ true pos. & $R=V+S$ \\ \hline
+ & $m_0$ & $m-m_0$ & $m$
+\end{tabular}
+Capital letters represent RV. Only $R$ is observable. $m$ is fixed and known, $m_0$ is fixed and unknown. If $m_0=m$ then \textit{global null}. \\
+$P(\textit{type I error}) = P(\textit{rejecting } H_0 \textit{ when } H_0 \textit{ is true}) = \alpha$ \\
+$P(\textit{type II error}) = P(\textit{not rejecting } H_0 \textit{ when } H_A \textit{ is true}) = \beta$ \\
+\textbf{Power of a test} $1-\beta$ 
+\textbf{False discovery proportion (FDP):} $Q=V/R$ (note: $V/R=0$ if $V=R=0$) 
+\textbf{False discovery rate (FDR):} $E(Q)$ Expected proportion of false discoveries among all disc. \textbf{Family wise error rate (FWER):} $P(V\geq 1)$ Prob. of making one or more false discoveries. Note: controlling the FWER is more strict than controlling the FDR: if $V\geq 1$, then $Q=V/R \leq 1$ and if $V=0$, then $Q=V/R=0$. So $\mathds{1}_{\{V\geq 1\}}\geq Q$: $\text{FWER}=P(V\geq 1)=E[\mathds{1}_{\{V\geq 1\}} \geq E[Q] = \text{FDR}$. If $m=m_0$ then $\text{FWER}=\text{FDR}$.
+
+\subsection*{Bonferroni Correction}
+Idea: $\text{FWER}=P(V\geq 1)=P(\textit{at least one false rejection among tests }\allowbreak T_1,...,T_m)=P(\cup_{i=1}^m\{\textit{false rejection in test }T_i\}) \leq \sum_{i=1}^m P(\{\textit{false rej.} \allowbreak \textit{ in test}\}) \leq \sum_{i=1}^m \alpha = m\cdot \alpha$ so we set the signif. level of individual tests to $\alpha' =\alpha /m$, then $\text{FWER}\leq m\alpha' =\alpha$. Power: if the tests are indep. and $m=m_0$ then $\text{FWER}=1-(1-\alpha)^m$ which is $\approx \alpha\cdot m$ for small $\alpha$ and moderate $m$. If the tests are correlated: too conservative.
+
+\subsection*{Benjamini-Hochberg}
+Let $p(1)\leq p(2) \leq ... \leq p(m)$ be ordered p-values. Let $i_0$ be the largest $i$, s.t. $p(i)\leq q\cdot i / m$. Reject all $H_{(i)}$ with $i\leq i_0$. For independent test statistics (or p-values) this controls the $\text{FDR}$ at level $q$, i.e. $\text{FDR}=q\cdot m_0 / m \leq q$. 
+\subsection*{Westfall Young Permutation Procedure}
+Provides \textit{weak control of the FWER} (i.e. under the global null). \\
+Given a data $X \in \mathbb{R}^{n\times (m+1)}$ size and $y\in \{0,1\}^n$. If $m=m_0$ then one can permute the y-values:\\
+1. Repeat many times: premute y-cols, do a two sample test (e.g. Wilcoxon) for each $x_j$ col. (comparing $x_j[y==1]$ and $x_j[y==0]$). Let $p_j$ for $j=0,...,m$ be the corresp. p-value. Store $\min(p_1,...,p_m)$.\\
+2. Set $\delta$ to the empirical $\alpha$-quantile of the permutation distribution of $min(p_1,...,p_m)$. \\
+3. Reject any null hypothesis where the two-sample test on the original data has p-value $\leq \delta$.\\
+
+\begin{codebox}{r}{Westfall Young Permutation Procedure}
+nr.sim <- 1000
+min.p.values <- numeric(nr.sim)
+for(sim in 1:nr.sim) {
+  y_perm = sample(y, length(y), replace = FALSE)
+  min.p.values[sim] <- min(apply(x, 2, function(j) chisq.test(x = j, y = y_perm)$p.value))
+}
+delta <- quantile(min.p.values, probs = 0.05)
+table(p.values < delta)
+\end{codebox}

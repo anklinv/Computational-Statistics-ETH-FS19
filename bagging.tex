@@ -1,0 +1,22 @@
+\section*{Bootstrap Aggregating (Bagging)}
+\textbf{Bagging for Regression:} For data $(X_1,Y_1),...,(X_n,Y_n)$ and base procedure $\hat g(\cdot): \mathbb{R}^p\to \mathbb{R}$, take $B$ bootstrap samples $\hat g_{bag}(x) = \frac 1 B \sum_{b=1}^B \hat g^{*b}(x)$ where $\hat g^{*b}$ is the estimate based on the $b$-th bootstrap sample. No pruning, since variance of single tree not a problem as we average. Linear predictions are the same under bagging, so only interesting for non-linear estimates. For regression can only improve or stay the same. \\
+\textbf{Bagging for Classification:} $\hat g(\cdot): \mathbb{R}^p \to \{1, ..., k\}$. $\hat g (x) = \text{argmax}_{k=1,...,K} \sum_{b=1}^B \mathds{1}_{\hat g^{*b}(x)=k}$ (majority vote). Can also get class probability: $\hat p_k^{bag}(x) = \frac{1}{B} \sum_{b=1}^B \hat p_k^{*b}(x)$. Can also be formulated as $\hat g^{bag}(x) = \text{argmax}_{k=1,...,K} \hat p_k^{bag}(x)$ (better if interested in class probabilities, sometimes even helps accuracy). Bagging a good classifier can improve performance, but bagging a bad classifier can decrease performance. \\
+\textbf{Out-of-Bag Error:}
+Some bags have not trained on a particular sample. Can predict this only by the bags that have not been trained on it (should be $\sim 1/3$) for all samples and average to get a valid estimate for the test error. \\
+\textbf{Random Forests:} 
+Essentially bagged trees. Have $B$ bootstrap samples $\to$ create trees. They reduce dependence between tree estimates by only allowing a random subset of predictors at each split. Default: regression $p/3$, classification $\sqrt{p}$. (in R option mtry).
+
+\begin{tabular}{llll}
+                 & Tree & Bagging & Random Forest \\
+Performance      & -    & +       & ++            \\
+Computation      & +    & -       & +/-           \\
+Interpretation   & +    & -       & -             \\
+Out-of-bag error & -    & +       & +            
+\end{tabular}%
+
+\begin{codebox}{r}{Random Forests}
+library(randomForest)
+cs.bag <- randomForest(Sales ~ . , train.data, mtry=p-1, importance = TRUE) # Bagging
+cs.forest <- randomForest(Sales ~ . , train.data, mtry=p/3, importance = TRUE) # Random Forest
+importance(cs.forest) # Importance of predictors
+\end{codebox}

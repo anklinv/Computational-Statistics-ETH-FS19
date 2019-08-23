@@ -1,0 +1,13 @@
+\section*{K Nearest Neighbors}
+Non-parametric method: $\hat f(x)=1/k \sum_i yi$ where $y_i$ are the $k$ nearest neighbors of $x$. If $k$ is larger has less variance, more bias. If $k$ is smaller has more variance, less bias.
+Fails if there are lots of useless predictors.
+
+\begin{codebox}{r}{KNN}
+library(kknn)
+dfTrain=data.frame(y=Ytrain,x=Xtrain)
+dfTest=data.frame(x=Xtest)
+fit.kknn <- kknn(y ~ ., dfTrain,dfTest,k=8)
+predTest=predict(fit.kknn) # predictions on dfTest
+library(class) # Alternative library for knn
+knn(train, test, k=5)
+\end{codebox}

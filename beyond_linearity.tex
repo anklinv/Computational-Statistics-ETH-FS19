@@ -1,0 +1,77 @@
+\section*{Beyond Linearity}
+\textbf{Basis Functions:} $y_i = \beta_0 + \beta_1 b_1(x_i) + ... + \beta_k b_k(x_i) + \epsilon_i$ \\
+\textbf{Polynomial Regression:} $y_i=\beta_0+\beta_1 x_i + \beta_2 x_i^2 +...+\beta_d x_i^d + \epsilon_i$. Easy \\
+% Workaround to avoid cutting off the bottom part of the formula
+\vfill
+to fit, but unstable near boundaries. As basis function: $b_j(x_i) = (x_i)^j$. Can also use better (orthogonal) basis functions (R automatically uses these). If orthogonal, can check until which coefficient it is significant. Gives same result and accuracy as monomial basis.\\
+\textbf{Step Functions:} 
+Create $k$ cut points $c_1,...,c_k$ in the range of $x$. Then basis functions: $b_j(x_i) = \mathds{}{1}_{\{ c_j < x_i \leq c_{j+1}\}}$. \\
+\textbf{Regression Splines:} 
+Combines polynomial regression with step functions. A piecewise degree $d$ polynomial with continuity in dimensions $0, ..., d-1$. Generally has $(k+1)(d+1)$ parameters and $k\cdot d$ constraints, so $k+d+1$ degrees of freedom. (e.g. \textbf{piecewise cubic} has $4(k+1)$ parameters and $3k$ constraint, so $k+4$ degrees of freedom. Basis functions: $h(x, \xi)=(x-\xi)_+^3$ ($0$ for all values $\leq \xi$). $y_i = \beta_0 + \beta_1 x_i + \beta_2 x_i^2 + \beta_3 x_i^3 + \gamma_1 h(x_i, \xi_1) + ... + \gamma_k h(x_i, \xi_k) + \epsilon_i$). \textbf{Natural splines:} Regression splines with additional boundary constraints: linear outside of outer knots (so $k$ degrees of freedom). \\
+\textbf{Smoothing Splines:} $G=\{ g:[a,b]\to \mathbb{R}: g'' \text{ exists and } \int_a^b g''(x)^2 dx < \infty \}$ is the class of functions to consider: $\hat g = \text{argmin}_{g\in G} \sum_{i=1}^n (y_i - g(x_i))^2 + \lambda \int_a^b g''(x)^2 dx$. Note: if $\lambda = 0$, $\hat g$ is any function in $G$ that passes through all data points. If $\lambda=\infty$, we get the least squares estimate. Shrunken version of natural spline with knots at $x_1, ..., x_n$. \\
+\textbf{Generalized Additive Models:} $y_i = \beta_0 + \sum_{j=1}^p f_j(x_{ij}) + \epsilon_i$. More general than linear model, does not allow for interactions automatically $\to$ no curse of dimensionality. \\
+\textbf{Local Regression:} Algorithm for local regression at $X=x_0$: 1) Gather the fraction $s=k/n$ of trianing points there $x_i$ are closest to $x_0$. 2) Assign weight $K_{i0}=K(x_i, x_0)$ to each point in this neighborhood, so that the point furthest from $x_0$ has weight zero and the closest has the highest weight. All but these k nearest neighbors get weight zero. 3) Fit a weighted least squares regression of the $y_i$ on the $x_i$ using the weights, by finding $\hat\beta_0$ and $\hat\beta_1$ that minimize $\sum_{i=1}^n K_{i0}(y_i-\beta_0-\beta_1 x_i)^2$. 4) The fitted value of $x_0$ is given by $\hat f (x_0) = \hat\beta_0 + \hat\beta_1 x_0$.
+
+\textbf{Backfitting:}
+Let $s_j: (u_1,...,u_n)^T \to (\hat u_1,...,\hat u_n)^T$ be a smoother (e.g. multiple linear regression). Order influences \#iterations\\
+Initialize $\hat \mu = \frac 1 n \sum_{i=1}^n y_i$, \quad $\hat g_j = 0 \quad \forall j$\\
+Do until convergence:\\
+$\quad \text{for each } j=1,...p$:\\
+$\quad \quad \hat g_j \gets s_j(y - \hat \mu \mathbb{1} - \sum_{k \neq j} \hat g_k)$\\
+$\quad \quad \hat g_j \gets \hat g_j - \frac 1 n \sum_{i=1}^n \hat g_j(x_{ij}) \vec{1} $\\
+
+\begin{codebox}{r}{Using GAMs and KNN}
+# Polynomials
+lm(wage~poly(age,4)) # Orthogonal polynomials
+lm(wage~poly(age, 4, raw=T)) # Monomial basis
+lm(wage~age+I(age^2)+I(age^3)+I(age^4)) # Alternative
+
+# Polynomial regression
+fit <- lm(wage ~ poly(age, 4), data=Wage)
+fit2 <- lm(wage ~ poly(age, 3), data=Wage)
+anova(fit, fit2) # Check if significantly better
+# Automatically check significance (if orthognal)
+round(coef(summary(fit2), 2), 4)
+
+# Regular spline
+fit <- lm(wage ~ bs(age, knots=c(25,40,60)), data=Wage)
+# Natural spline
+fit <- lm(wage ~ bs(age, df=4), data=Wage)
+# Smoothing spline
+fit <- smooth.spline(age, wage, df=16)
+fit <- smooth.spline(age, wage, cv=T)
+
+library(gam)
+# s() for smoothing spline, lo() for loess
+model.gam <- gam(y~s(X1, 4), data = dtrain)
+mse.gam <- mean((ytest - predict(model.gam, dtest))^2)
+
+library(FNN)
+pred.knn <- knn.reg(train = matrix(dtrain[,1],ncol=1), test = matrix(dtest[,1], ncol=1), y = ytrain, k=i)
+  results.knn[i] <- mean((ytest - pred.knn$pred)^2)
+\end{codebox}
+
+\begin{codebox}{r}{Backfitting Algorithm for MLR}
+backfit <- function(x, y, n, p, o, eps) {
+  mu.hat <- mean(y) # Compute overall mean
+  g <- matrix(0, nrow=n, ncol=p) # Initialize g
+  converged <- FALSE
+  while(!converged) {
+    old.g <- g
+    beta0.hat <- mu.hat 
+    beta.hat <- numeric(p+1)
+    for(i in o) { # o: order e.g. 1:p
+      r <- y - mu.hat - rowSums(g[,-i])
+      fit <- lm(r~x[,i])
+      g[,i] <- fit$fitted
+      beta0.hat <- beta0.hat + fit$coeff[1]
+      beta.hat[1+i] <- fit$coeff[2]
+    }
+    if(max(colSums((old.g - g)^2)/colSums(old.g^2)) < eps) {
+      converged <- TRUE
+    }
+    beta.hat[1] <- beta0.hat
+  }
+  return(beta.hat)
+}
+\end{codebox}

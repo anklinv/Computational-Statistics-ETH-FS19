@@ -1,0 +1,38 @@
+\section*{Permutation Test}
+Non-parametric, simple model that works with any test statistic. P-values and type I error control exact/approximate (not asymptotic), but needs computational power and not everything can be modeled in this way (e.g. individual coefficients in LR) \\
+{1. Pick a test stat. that measures some difference between groups}\\
+{2. Consider all possible permutations (or randomly permute) to obtain a permutation distribution.}\\
+{3. Compare observed value to permutation distribution}\\
+
+\subsection*{Wilcoxon Test}
+Non-parametric, unpaired, robust test. $H_0: F_1 = F_2$, $H_A: F_1 $ shifted compared to $F_2$. Compute ranks of randomly switched sign (different group assignment), reject $H_0$ if observed rank over critical value of rank distribution.
+
+\begin{codebox}{r}{Permutation Test \& Wilcoxon Signed Rank Sum Test}
+# Permutation test
+fit <- lm(y~X)
+obsF <- summary(fit)$fstatistic[1]
+res.f <- rep(NA, 10000)
+for (i in 1:10000){
+  y <- y[sample(1:nrow(X), nrow(X))]
+  fit.tmp <- lm(y~X)
+  res.f[i] <- summary(fit.tmp)$fstatistic[1]
+}
+pval<-(sum(obsF<=res.f,na.rm=T)+1)/(length(res.f)+1)
+# Permutation Wilcoxon Signed Rank Sum Test
+diff <- immer$Y1 - immer$Y2
+V.obs <- sum(rank(abs(diff)) * (diff > 0))
+V <- numeric(100000)
+for(i in 1:100000){
+  perm<-diff * sample(c(1,-1),nrow(immer),replace=T)
+  V[i] <- sum(rank(abs(perm)) * (perm > 0))
+}
+p.value <- table(V >= V.obs)["TRUE"]/length(V)
+# Automatic
+wilcox.test(diff, alternative = "greater")
+\end{codebox}
+
+% Maybe drop this
+%\subsection*{Exercise Wilcoxon}
+%Let $X_1,...,X_m~F_X$ and $Y_1,...,Y_m~F_Y$ be independent. $H_0: F_X=F_Y$, $H_A: F_X(x) = F_Y(x-a) \  \forall x$ and $a>0$. Let $D_i = X_i - Y_i, i \in [1,m]$. Show that $H_0$ and $H_A$ can be written as $H_0: $ the distribution of $D$ is symmetric around $a=0$, $H_A$ the distribution of $D$ is symmetric around $a>0$. \\
+%We show that the distribution of $D$ is symmetric around $a$: $P(D-a \leq d) = P(-(D-a) \leq d)$. We have $P(D-a \leq d) = P(D \leq d + a) = \int P(X-Y \leq d+a |Y=y) f_Y(y) dy = \int P(X-y \leq d+a) f_Y(y) dy = \int P(X \leq d+a+y) f_Y(y) dy = \int F_X(d+a+y)f_Y(y)dy$ We get the same when exchanging $X$ and $Y$: $P(-(D-a)\leq d) = P(-D \leq d-a) = P(Y-X \leq d-a) = \int F_Y(d-a+x)f_X(x)dx$. \\
+%We can use that $F_X(x)=F_Y(x-a)$ and $f_X(x)=f_Y(x-a)$ to show: $\int F_X(d+a+y)f_Y(y)dy = \int F_Y(d+a+y-a)f_X(y+a)dy = \int F_Y(d+y)f_X(y+a)dy = \int F_Y(d-a-x)f_X(x)dx$

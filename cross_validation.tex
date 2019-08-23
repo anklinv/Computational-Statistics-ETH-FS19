@@ -1,0 +1,6 @@
+\section*{Cross Validation}
+Can be used for \textit{model assessment} (estimate test MSE) and \textit{model selection} (choose tuning parameters, variable selection). But not both at the same time (use double CV instead). \\
+\textbf{Validation set:} split data into two halves, train on one, test on the other (most bias).
+\textbf{k-Fold:} same, but with many folds. Try all folds for test and average metrics over the folds (in between). $\text{Var}(\hat {\theta_k}) = 1/K \cdot \hat {\text{Var}}(MSEs)$ \textbf{LOOCV:} extreme version where each data point is a fold (least bias). \\
+$\theta_k = \frac 1 k \sum_{i=1}^k \frac 1 {|I_k|} \sum_{i\in I_k} (y_i - \hat f^{-I_k}(x_i))^2$, 
+$\theta_{L} = \frac 1 n \sum_{i=1}^n (y_i - \hat f^{-i}(x_i))^2$

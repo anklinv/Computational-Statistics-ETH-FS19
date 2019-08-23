@@ -1,0 +1,23 @@
+\section*{Tree Based Methods}
+$y_i = \sum_{r=1}^M \beta_r \mathds{1}_{x_i\in R_r} + \epsilon_i$. Where $R_1, ..., R_M$ are regions (we limit ourselves to rectangular regions). \\
+\textbf{Recursive Binary Splitting:} Greedy method to find the regions: For all predictors find the best cutting point, then take the cutting point that minimizes the error $\sum_{i: x\in R_1} (y_i - \bar y_{R_1})^2 + \sum_{i: x \in R_2} (y_i - \bar y_{R_2})^2$. Stop when region contains less than 5 elements. \\
+\textbf{Pruning:} A deep tree $T_0$ can overfit. Pruning is a possible solution: For $\alpha >0$: find $\text{argmin}_{T\subset T_0} err(T) + \alpha |T|$. ($\alpha$ is tuning parameter, find via CV). \\
+\textbf{Classification Trees:} At each split, try to improve node purity measured by gini index: $I(D) = [\frac{n_L}{n} I(D_L) + \frac{n_R}{n} I(D_R)] > 0$ where the subtrees are $I(D_R) = \hat p (1-\hat p)$ where $\hat p = \frac{\#yes}{\#yes + \#no}$. Can predict class probability $\hat p_k(x) = \textit{proportion of observations with class }k\textit{ in leaf node that contains }x$.
+
+
+\begin{codebox}{r}{Using Trees}
+train.ind <- sample(n, round(n/2), replace = FALSE)
+train.data <- Carseats[train.ind,]
+test.data <- Carseats[-train.ind,]
+# Create and plot tree
+cs.tree <- tree(Sales ~ . , train.data)
+plot(cs.tree)
+text(cs.tree, pretty=1)
+# Predict using tree
+test.pred <- predict(cs.tree, test.data)
+(MSE <- mean((test.data$Sales - test.pred)^2))
+# Prune tree
+cv.carseats = cv.tree(cs.tree, FUN=prune.tree)
+best.size <- cv.carseats$size [which.min(cv.carseats$dev)]
+pruned.tree <- prune.tree(cs.tree, best = best.size)
+\end{codebox}

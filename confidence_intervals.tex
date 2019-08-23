@@ -1,0 +1,33 @@
+\section*{Confidence Intervals}
+Want to calculate: $P\left( t_{\alpha / 2, n-p} < \frac{\hat \beta_j - \beta_j} {\hat {se}(\hat \beta_j)} < t_{1-\alpha / 2, n-p} \right) = 1 - \alpha$.\\ $CI = \hat \beta_j \pm \hat se(\hat \beta_j) \cdot t_{1- \alpha / 2, n-p} = \hat \beta_j \pm \hat \sigma \sqrt{x_0^\top (X^\top X)^{-1} x_0} \cdot t_{1- \alpha / 2, n-p}$
+\subsection*{Prediction Interval}
+For new point $x_0$:
+$\hat y_0 = x_0^\top \beta \pm \hat \sigma^2 \sqrt{1 + x_0^\top (X^\top X)^{-1}x_0} \cdot t_{1-\alpha / 2, n-p}$ 
+% Workaround to avoid cutting of the bottom part of the formula
+\vfill
+
+\subsection*{Bias Variance Trade-Off}
+Expected Test MSE at $x_0$: $E[y_0 - \hat f(x_0)^2] = \text{Bias}^2 (\hat f(x_0)) + \text{Var}(\hat f(x_0)) + \sigma^2$, where $\text{Bias}^2(\hat f(x_0)) = (f(x_0)-E[\hat f(x_0)])^2$.
+
+\begin{codebox}{r}{Confidence Intervals}
+confint(fit) # Automatic CI
+# Manual CI (for intercept)
+se.intercept <- summary(fit)$coef[1,2]
+coef(fit)[1] - qt(.975, n-2)*se.intercept
+coef(fit)[1] + qt(.975, n-2)*se.intercept
+# Automatic Prediction CI
+predict(fit,data.frame(name=5),level=.95,interval="p")
+# Manual Prediction CI
+fitted <- fit$coef[1] + fit$coef[2]*x0
+quant <- qt(.975,n-2) # Quantile of t distribution
+sigma.hat <- sqrt(sum((fit$resid)^2/(n-2)))
+X <- as.matrix(cbind(1,thuesen[,1]))
+XtXi <- solve(t(X) %*% X)
+X00 <- as.matrix(c(1,x0), nrow=2)
+se <- sigma.hat * sqrt(t(X00) %*% XtXi %*% x00)
+lower <- fitted - quant * se
+upper <- fitted + quant * se
+# Bias Variance Trade-Off of a Method
+Bias <- mean(EstimateUsingCV) - TrueValueSimulated
+MSE <- Bias^2 + var(EstimateUsingCV)
+\end{codebox}

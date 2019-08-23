@@ -1,0 +1,62 @@
+\begin{codebox}{r}{R-Help}
+# Workaround for automatic dimension collapse
+matrix(X[test.fold,], nrow=n/k)
+
+# Test if an element is in a list
+if ("X1" %in% names(coef(m,mo)))
+
+# Fit distribution to data vector
+library(MASS)
+fit.gamma <- fitdistr(boogg, "gamma")
+
+# Remove NA
+thuesen <- thuesen[!is.na(thuesen[,2]),]
+data_comp <- data[complete.cases(data),]
+# Creating categorical variables
+High=ifelse(Carseats$Sales<=8,"No","Yes")
+# Standardize data
+scaled.dat <- scale(dat)
+
+# Anova test to determine if there is a significant
+# difference between models. Anova uses RSS and DoF
+# of largest (last) model, so use ascending order!
+anova(fit.0, fit.1, fit.2, fit.3)
+
+# Loess smoother
+span <- c(0.1, 0.2, 0.3, 0.45, 0.7, 1)
+lo <- loess(y ~ x, span=span[i])
+prediction <- predict(object=lo, x)
+
+# Given fixed x, error distribution and true param.:
+# Power of test simulation. Know that y ~ poly(x, 3) + err (for typeI error: do same with y = err)
+results.power <- numeric(n.sim)
+for (i in 1:n.sim) {
+    err <- rgamma(n, ...) - 2
+    y <- beta.0 + beta.1 * I(x) + beta.2 * I(x^2) + beta.3 + I(x^3) + err
+    fit.power <- lm(y ~ I(x) + I(x^2) + I(x^3))
+    f1 <- summary(fit.power)$fstatistic
+    p.val.power <- 1 - pf(f1[1], f1[2], f1[3])
+    results.power[i] <- p.val.power < 0.05
+}
+power <- mean(results.power)
+
+# Plotting
+par(mfrow=c(1,1)) # Arrangement of plots
+plot(..., xlim=c(-2,2), ylim=c(-5,8), xlab="x", ylab="y")
+abline(a=..., b=..., col="red") # Add straight line
+abline(h=..., col="red") # Add horizontal line
+abline(v=..., col="red") # Add vertical line
+lines(density(some.vector)) # Add density
+# draw density and CDF
+grid <- seq(from=0,to=5,length=200)
+plot(grid, dlnorm(grid), type="l", main="density")
+plot(grid, plnorm(grid), type="l", main="CDF")
+# Add regression line to data plot
+library(MASS)
+attach(Boston)
+fit <- lm(dis ~ poly(nox, degree = 3))
+line.x <- seq(min(nox), max(nox), length.out = 1000)
+line.y <- predict(fit, data.frame(nox = line.x))
+plot(dis, nox)
+lines(line.y, line.x, col = "red")
+\end{codebox}
